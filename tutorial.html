@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>msnp.py Tutorial</title>
+
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<style type="text/css">
+<!--
+
+BODY {
+  color: black;
+  background-color: white;
+
+  font-family: serif;
+}
+
+A:link {
+  color: blue;
+  background-color: white;
+}
+
+A:visited {
+  color: purple;
+  background-color: white;
+}
+
+A:active {
+  color: red;
+  background-color: white;
+}
+
+H1, H2, H3, H4, H5, H6 {
+  font-family: Verdana, sans-serif;
+}
+
+CODE {
+  color: navy;
+}
+
+// -->
+</style>
+
+</head>
+<body>
+
+<a href="http://msnp.sf.net/">Home</a>
+
+<h1>msnp.py Tutorial</h1>
+
+<em>Manish Jethani (manish_jethani -@- yahoo.com)</em>
+<p>
+Version 0.4 - Dec 24, 2003
+
+<h4>Contents</h4>
+
+<ul>
+<li>
+<a href="#a1">1.  So what is it?</a>
+</li>
+
+<li>
+<a href="#a2">2.  Let's get started</a>
+
+<ul>
+<li><a href="#a2_1">2.1  Import the package</a></li>
+<li><a href="#a2_2">2.2  The 3-step login</a></li>
+<li><a href="#a2_3">2.3  Event loop</a></li>
+<li><a href="#a2_4">2.4  Callbacks</a></li>
+<li><a href="#a2_5">2.5  Instant messages</a></li>
+</ul>
+
+</li>
+
+<li>
+<a href="#a3">3.  Topics</a>
+</li>
+</ul>
+
+<a name="a1"></a>
+<h2>1.  So what is it?</h2>
+
+<a href="http://msnp.sf.net/"><em>msnp.py</em></a> is an implementation of the
+<strong>MSN instant messaging protocol</strong> in the <a
+href="http://www.python.org/">Python</a>
+programming language.  This <strong>pure Python package</strong> makes it
+extremely <strong>easy, quick, and efficient</strong> to build applications that
+need to interact with the MSN messaging service.
+
+<p>
+msnp.py is based on the <a
+href="http://www.hypothetic.org/docs/msn/index.php">works of Mike Mintz</a>.
+
+<a name="a2"></a>
+<h2>2.  Let's get started</h2>
+
+Assuming the package has been installed, it's time to get our hands dirty.
+
+<p>
+Note:  If you haven't yet installed it, it can be <a
+href="https://sourceforge.net/project/showfiles.php?group_id=81726">downloaded</a>
+as a tarball/zip file, or as a Windows installable.  Before msnp.py, you need to
+have a <a href="http://www.python.org/2.3/">Python 2.3+ distribution</a>
+installed on your system.  If you're not familiar with the Python language, it's
+<a href="http://www.python.org/doc/current/tut/tut.html">never too late to
+start</a>!
+
+<a name="a2_1"></a>
+<h3>2.1  Import the package</h3>
+
+Just start up your Python interpreter, and issue the following command:
+
+<p>
+<code>
+&gt;&gt;&gt; import msnp<br>
+</code>
+
+<p>
+This will silently import the <code>msnp</code> package into your current
+namespace.  Let's see the list of available <code>msnp</code> objects:
+
+<p>
+<code>
+&gt;&gt;&gt; dir(msnp)<br>
+['Chat', 'ChatCallbacks', 'Error', 'Friend', 'FriendList', 'Group', 'Lists',<br>
+'PrivacyModes', 'Session', 'SessionCallbacks', 'States', '__all__',<br>
+'__builtins__', '__doc__', '__file__', '__name__', '__path__', 'chat',<br>
+'codec', 'command', 'error', 'friend', 'net', 'protocol', 'session']<br>
+</code>
+
+<p>
+That was a listing from version 0.4 of msnp.py.
+
+<a name="a2_2"></a>
+<h3>2.2  The 3-step login</h3>
+
+<p>
+We'll start by writing a program to login.  Let's just do it at the interpreter
+prompt:
+
+<p>
+<code>
+&gt;&gt;&gt; import msnp<br>
+&gt;&gt;&gt; msn = msnp.Session()<br>
+&gt;&gt;&gt; msn.login('trinity@hotmail.com', 'Z10N0101')<br>
+</code>
+
+<p>
+That's it!  No kidding.
+
+<p>
+Well, of course, that login is pretty much useless; the server will throw us off
+in no time.  To do anything useful, we must write a proper program, with some
+kind of an <em>event loop</em>.
+
+<a name="a2_3"></a>
+<h3>2.3  Event loop</h3>
+
+<blockquote>
+<code>
+import msnp<br>
+import time<br>
+<br>
+msn = msnp.Session()<br>
+msn.login('trinity@hotmail.com', 'Z10N0101')<br>
+<br>
+while True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;msn.process()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(1)<br>
+</code>
+</blockquote>
+
+Now this should work better.  At least the server's not going to throw us off.
+Calling the <code>process</code> method at regular intervals ensures that the
+program can keep interacting with the MSN server(s).  If you're writing a GUI
+application, you'll probably set up a timer for triggering <code>process</code>
+calls.
+
+<p>
+But we still wouldn't know what's happening.  Which brings us to the next point.
+Callbacks.
+
+<a name="a2_4"></a>
+<h3>2.4  Callbacks</h3>
+
+There needs to be a way for msnp.py to tell us what's happening; things like
+``Who's online?'', ``What's my display (nick) name?'', ``Who's trying to message
+me?'', and so on.  This is done by means of a callback interface--a set of functions that need to
+be implemented by the client, for listening on specific events.  To start with,
+we'll implement only one function in our callback interface implementation.
+
+<blockquote>
+<code>
+import msnp<br>
+import time<br>
+<br>
+class MsnListener(msnp.SessionCallbacks):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def state_changed(self, state):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if state ==
+msnp.States.ONLINE:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print
+'You are now online.'<br>
+<br>
+msn = msnp.Session(MsnListener())<br>
+msn.login('trinity@hotmail.com', 'Z10N0101')<br>
+<br>
+while True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;msn.process()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(1)<br>
+</code>
+</blockquote>
+
+The only thing added over the previous program is the <code>MsnListener</code>
+class, and the extra parameter passed to the <code>msnp.Session</code>
+constructor.  <code>MsnListener</code> implements only one callback
+function--<code>state_changed</code>, which tells the client about the presence
+state of the user logged in.  The <code>state</code> parameter will have a value
+of <code>msnp.States.ONLINE</code>, when the user has just logged in.  See
+<code>dir(msnp.States)</code> for a complete list of supported presence states.
+
+<p>
+As an exercise, you could implement the <code>friend_online</code> callback
+function of the <code>msnp.SessionCallbacks</code> class.  This function will be
+called once, for every online contact on your friend list, immediately after
+logging in, and every time an online contact changes his presence state.  See
+<code>help(msnp.SessionCallbacks.friend_online)</code> for help on the
+parameters.
+
+<a name="a2_5"></a>
+<h3>2.5  Instant messages</h3>
+
+Here's a program that echoes all incoming messages back to the sender:
+
+<blockquote>
+<code>
+# echobot.py -- echo messages back to sender<br>
+<br>
+import msnp<br>
+import time<br>
+<br>
+class MsnChatListener(msnp.ChatCallbacks):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def message_received(self, passport_id,
+display_name, text, charset):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print '%s: %s'
+% (passport_id, text)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.chat.send_message(text,
+charset)<br>
+<br>
+class MsnListener(msnp.SessionCallbacks):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;def chat_started(self, chat):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;callbacks =
+MsnChatListener()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;chat.callbacks = callbacks<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;callbacks.chat = chat<br>
+<br>
+msn = msnp.Session(MsnListener())<br>
+msn.login('trinity@hotmail.com', 'Z10N0101')<br>
+<br>
+while True:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;msn.process(chats = True)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;time.sleep(1)<br>
+</code>
+</blockquote>
+
+First, note that this
+time we've implemented the <code>chat_started</code> callback function, and
+dropped support for <code>state_changed</code>.  The <code>chat_started</code>
+function is called either when you've requested a chat conversation (using the
+<code>start_chat</code> method) with another MSN contact, or when an MSN contact
+has invited you to chat.  In either case, msnp.py handles all the gory details
+itself, and calls <code>chat_started</code> when you're ready to chat.  In this
+example, a chat is never started by us, but instead as a result of someone
+inviting us.
+
+<p>
+<code>chat_started</code> takes a single parameter--the instance of
+<code>msnp.Chat</code> representing the chat session.  The chat session is much
+like the main login session; it has its own <code>process</code> method; it
+also has its own callback interface, of which <code>MsnChatListener</code> is an
+implementation.  On the second and third lines of <code>chat_started</code>,
+we're letting <code>chat</code> and <code>callbacks</code> know about each
+other.
+
+<p>
+In <code>MsnChatListener</code>, we've implemented the
+<code>message_received</code> callback, which (so obviously) is called when a
+message is received from another user.  To echo the message
+back to the sender, we simply call <code>send_message</code> on
+<code>self.chat</code>.  See
+<code>help(msnp.ChatCallbacks.message_received)</code>,
+<code>help(msnp.ChatCallbacks.send_message)</code>.
+
+<p>
+Did you notice the modified call to <code>msn.process</code>, on the second last
+line?  The <code>chats = True</code> option tells <code>msn</code> to process
+commands for all currently active chat sessions.
+
+<p>
+I hope you're impressed ;-)  As an exercise, you could write a program that
+sends a (possibly random) message to every contact that comes online.  Hints:
+<code>msnp.SessionCallbacks.friend_online</code>,
+<code>msnp.Session.start_chat</code>,
+<code>msnp.SessionCallbacks.chat_started</code>,
+<code>msnp.ChatCallbacks.friend_joined</code>,
+<code>msnp.Chat.send_message</code>.
+(Don't blame me if you get sued for this.)
+
+<a name="a3"></a>
+<h2>3.  Topics</h2>
+
+<span style="font-family: monospace">&lt;!-- TODO:
+Fill this space. --&gt;</span>
+
+<p>
+<a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=msnp&amp;type=1" width="88" height="31" border="0" alt="SourceForge.net Logo" /></a>
+
+&nbsp;
+      <a href="http://validator.w3.org/check/referer"><img border="0"
+          src="http://www.w3.org/Icons/valid-html401"
+          alt="Valid HTML 4.01!" height="31" width="88"></a>
+
+<p>
+manish_jethani -@- yahoo.com
+
+<p>
+Copyright &copy; 2003 Manish Jethani
+
+</body>
+</html>
+
+<!-- vim: set ts=2 sw=2 et tw=80 : -->

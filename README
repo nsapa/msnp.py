@@ -1,0 +1,41 @@
+README for msnp.py 0.4.1
+
+INSTALLATION
+
+  Python 2.3+
+
+    msnp.py requires Python 2.3, or higher.  If that it not available on your
+    system, please consider downloading it:
+
+      http://www.python.org/2.3/
+
+  msnp.py
+
+    Untar/unzip the archive into a temporary directory.  Then go to the
+    directory containing the file setup.py, and run the following commands:
+
+      python setup.py build
+      python setup.py install
+
+DOCUMENTATION/RESOURCES
+
+  See tutorial.html for a quick intro.
+
+  Visit the project home page:
+
+    http://msnp.sf.net/
+
+  Join the mailing list:
+
+    http://lists.sourceforge.net/lists/listinfo/msnp-devel
+
+  Report bugs:
+
+    https://sourceforge.net/tracker/?group_id=81726&atid=563849
+
+CHANGES
+
+  Implemented new friend list management of MSNP 8.
+
+vim: set tw=79 ts=2 sw=2 ai et :
+
