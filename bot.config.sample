@@ -1,0 +1,8 @@
+[account]
+login = somebody@somewhere.net
+pass = a_password
+display_name = Le bot à Nico
+
+[admins]
+1 = adria@astriaporta.space
+
