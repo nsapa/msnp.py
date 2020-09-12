@@ -30,6 +30,7 @@ from codec import url_codec
 
 import protocol
 
+
 class ChatCallbacks:
     """Callback interface for MSN chat
 
@@ -37,7 +38,6 @@ class ChatCallbacks:
     notifications on chat events.  The value of Chat.callbacks must be set
     after receiving the Chat instance in SessionCallbacks.chat_started
     """
-
     def friend_joined(self, passport_id, display_name):
         """Friend has joined the chat
 
@@ -71,14 +71,21 @@ class ChatCallbacks:
             display_name -- friend's display name
         """
 
+
 class Chat(_Session):
     """MSN chat conversation
 
     When a conversation is started, an instance of Chat is created and passed
     on to the SessionCallbacks.chat_started method.
     """
-    def __init__(self, session, server, hash, passport_id, display_name,
-        session_id = None, invitee = None):
+    def __init__(self,
+                 session,
+                 server,
+                 hash,
+                 passport_id,
+                 display_name,
+                 session_id=None,
+                 invitee=None):
 
         _Session.__init__(self, ChatCallbacks())
 
@@ -91,31 +98,40 @@ class Chat(_Session):
         self.initial_members = []
 
         self.http_proxy = session.http_proxy
+
+        #print "*** In chat.py:__init__, session %s with %s" % (session_id,passport_id)
         conn = self.conn = self._connect(server)
 
         if passport_id != session.passport_id:  # invited to chat
+            #print "** In chat.py:__init__, sending ANS"
             ans = Command('ANS', self.transaction_id,
-                (session.passport_id, hash, session_id))
+                          (session.passport_id, hash, session_id))
             self._send_cmd(ans, conn)
 
             while 1:
                 resp = self._receive_cmd(conn)
+                #print "** In chat.py:__init__, got %s to our ANS" % resp.cmd
                 if resp.cmd == 'ANS':
                     break
                 elif resp.cmd != 'IRO':
                     raise Error(int(resp.cmd), protocol.errors[resp.cmd])
-                self.initial_members.append((resp.args[2],
-                    url_codec.decode(resp.args[3])))
+                print "** In chat.py:__init__, adding %s to the chat" % resp.args[
+                    2]
+                self.initial_members.append(
+                    (resp.args[2], url_codec.decode(resp.args[3])))
 
         else:  # hosting chat
-            usr = Command('USR', self.transaction_id,
-                (passport_id, hash))
+            #print "** In chat.py:__init__, sending USR"
+            usr = Command('USR', self.transaction_id, (passport_id, hash))
             resp = self._sync_command(usr, conn)
+            #print "** In chat.py:__init__, got %s to our USR" % resp.cmd
             if resp.cmd != 'USR':
                 raise Error(int(resp.cmd), protocol.errors[resp.cmd])
 
-            cal = Command('CAL', self.transaction_id, (invitee,))
+            #print "** In chat.py:__init__, sending CAL"
+            cal = Command('CAL', self.transaction_id, (invitee, ))
             resp = self._sync_command(cal, conn)
+            #print "** In chat.py:__init__, got %s to our CAL" % resp.cmd
             if resp.cmd != 'CAL':
                 raise Error(int(resp.cmd), protocol.errors[resp.cmd])
             self.session_id = resp.args[1]
@@ -146,7 +162,7 @@ class Chat(_Session):
         self._async_command(msg)
         self.process()
 
-    def send_message(self, text, charset = 'utf-8'):
+    def send_message(self, text, charset='utf-8'):
         """Send message
 
         Keyword arguments:
@@ -191,6 +207,7 @@ class Chat(_Session):
 
     def __process_command_buf(self, buf):
         cmd = buf[:3]
+        #print "** In chat.py:__process_command_buf, cmd is %s" % cmd
         if cmd == 'MSG':
             self.__process_msg(buf)
         elif cmd == 'JOI':
@@ -205,15 +222,15 @@ class Chat(_Session):
         msg.receive(self.conn)
         mime_message = email.message_from_string(msg.msg_buf)
 
+        #print "** In chat.py:__process_msg, type of incoming message %s" % mime_message.get_content_type()
+
         if mime_message.get_content_type() == 'text/plain':
-            self.callbacks.message_received(msg.passport_id,
-                msg.display_name,
-                mime_message.get_payload(),
-                mime_message.get_content_charset())
+            self.callbacks.message_received(msg.passport_id, msg.display_name,
+                                            mime_message.get_payload(),
+                                            mime_message.get_content_charset())
 
         elif mime_message.get_content_type() == 'text/x-msmsgscontrol':
-            self.callbacks.typing_received(msg.passport_id,
-            msg.display_name)
+            self.callbacks.typing_received(msg.passport_id, msg.display_name)
 
     def __process_joi(self, buf):
         joi = split(buf)
@@ -223,5 +240,5 @@ class Chat(_Session):
         bye = split(buf)
         self.callbacks.friend_left(bye[1])
 
-# vim: set ts=4 sw=4 et tw=79 :
 
+# vim: set ts=4 sw=4 et tw=79 :

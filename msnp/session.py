@@ -33,6 +33,7 @@ from codec import url_codec
 import protocol
 import chat
 
+
 class _Session:  # common base for Session and Chat
     def __init__(self, callbacks):
         self.callbacks = callbacks
@@ -75,13 +76,13 @@ class _Session:  # common base for Session and Chat
         self.send_queue.append(cmd)
         self._increment_transaction_id()
 
+
 class SessionCallbacks:  # callback interface
     """Callback interface for MSN instant messaging session
 
     To receive notification on various protocol events, the client must
     implement some or all of the methods in this callback interface.
     """
-
     def ping(self):
         """Ping received from server"""
 
@@ -141,7 +142,7 @@ class SessionCallbacks:  # callback interface
             name -- new name of group
         """
 
-    def friend_added(self, list_, passport_id, display_name, group_id = -1):
+    def friend_added(self, list_, passport_id, display_name, group_id=-1):
         """Friend has been added
 
         If list_ is msnp.Lists.REVERSE, it means that the user has been added
@@ -155,7 +156,7 @@ class SessionCallbacks:  # callback interface
             group_id -- group ID of group to which friend has been added
         """
 
-    def friend_removed(self, list_, passport_id, group_id = -1):
+    def friend_removed(self, list_, passport_id, group_id=-1):
         """Friend has been removed
 
         Keyword arguments:
@@ -186,6 +187,7 @@ class SessionCallbacks:  # callback interface
             chat -- Chat instance representing new chat started
         """
 
+
 class Session(_Session):
     """MSN instant messaging session
 
@@ -194,12 +196,11 @@ class Session(_Session):
     logging in, the process method must be called periodically to process the
     server's commands.
     """
-
     class __ChatRequest:
         def __init__(self, invitee):
             self.invitee = invitee
 
-    def __init__(self, callbacks = None, dispatch_server = None):
+    def __init__(self, callbacks=None, dispatch_server=None):
         """Constructor for msnp.Session
 
         Keyword arguments:
@@ -226,26 +227,30 @@ class Session(_Session):
         from urllib import urlencode
         debuglevel = 0
 
+        #print '*** In session.py:__get_twn_ticket'
         # step 1: get address of login server
-        con = HTTPSConnection('nexus.passport.com',
-            http_proxy = self.http_proxy)
+        print '*** In session.py:__get_twn_ticket => step 1: connecting to passport nexus server.'
+        con = HTTPSConnection('m1.escargot.log1p.xyz',
+                              http_proxy=self.http_proxy)
         con.set_debuglevel(debuglevel)
-        con.request('GET', '/rdr/pprdr.asp')
+        con.request('GET', '/nexus-mock')
         res = con.getresponse()
         con.close()
         if res.status != 200:
             raise HttpError(0, 'Bad response from passport nexus server.',
-                res.status, res.reason)
+                            res.status, res.reason)
         hdr = res.getheader('PassportURLs')
         url = {}
         for u in hdr.split(','):
             k, v = u.split('=')
             url[k] = v
-        dalogin = url['DALogin'].split('/', 1)
+        dalogin = url['DALogin'].split('://', 2)[1].split('/', 1)
 
         # step 2: get "ticket" to notification server
+        print '*** In session.py:__get_twn_ticket => step 2: connecting to %s' % dalogin[
+            0]
         while True:
-            con = HTTPSConnection(dalogin[0], http_proxy = self.http_proxy)
+            con = HTTPSConnection(dalogin[0], http_proxy=self.http_proxy)
             con.set_debuglevel(debuglevel)
             auth = 'Passport1.4 OrgVerb=GET,%s,%s,%s,%s' \
                 % (urlencode({'OrgURL': 'http://messenger.msn.com'}),
@@ -253,12 +258,13 @@ class Session(_Session):
                     urlencode({'pwd': password}),
                     twn_string)
             con.request('GET', '/%s' % (dalogin[1]), '',
-                {'Authorization': auth})
+                        {'Authorization': auth})
             res = con.getresponse()
             con.close()
             if res.status != 200:
                 raise HttpError(0, 'Bad response from login server.',
-                    res.status, res.reason) # XXX handle redirection?
+                                res.status,
+                                res.reason)  # XXX handle redirection?
             else:
                 break
         hdr = res.getheader('Authentication-Info') or \
@@ -276,20 +282,24 @@ class Session(_Session):
         # TODO code cleanup
 
     def __handshake(self, server, username, password):
+        print "*** In session.py:__handshake"
         conn = self._connect(server)
         try:
+            #print "** Sending VER command"
             ver = Command('VER', self.transaction_id, ('MSNP8', 'CVR0'))
             resp = self._sync_command(ver, conn)
             if resp.cmd != 'VER' or resp.args[0] == '0':
                 raise Error(0, 'Bad response for VER command.')
 
+            #print "** Sending CVR command"
             cvr = Command('CVR', self.transaction_id,
-                ('0x0409', 'win', '4.10', 'i386', 'MSNMSGR', '6.0.0602',
-                'MSMSGS ', username))
+                          ('0x0409', 'win', '3.51', 'ppc', 'msnp.py', '0.4.1',
+                           'MSMSGS ', username))
             resp = self._sync_command(cvr, conn)
             if resp.cmd != 'CVR':
                 raise Error(0, 'Bad response for CVR command.')
 
+            #print "** Sending USR command"
             usr = Command('USR', self.transaction_id, ('TWN', 'I', username))
             resp = self._sync_command(usr, conn)
             if resp.cmd != 'USR' and resp.cmd != 'XFR':
@@ -300,8 +310,10 @@ class Session(_Session):
             # cases)
 
             if resp.cmd == 'XFR':
+                #print "** We got an XFR"
                 return split(resp.args[1], ':', 1)
             elif resp.cmd == 'USR':
+                #print "** We got an USR"
                 twn_string = resp.args[2]
 
                 ticket = self.__get_twn_ticket(twn_string, username, password)
@@ -316,13 +328,16 @@ class Session(_Session):
                 self.passport_id = resp.args[1]
                 self.display_name = url_codec.decode(resp.args[2])
                 self.logged_in = 1
+
+            else:
+                print '!! session.py:__handshake Received unknow cmd: %s' % resp.cmd
         finally:
             if not self.logged_in:
                 conn.break_()
             else:
                 self.conn = conn
 
-    def process(self, chats = False):
+    def process(self, chats=False):
         """Process events
 
         Keyword arguments:
@@ -333,12 +348,15 @@ class Session(_Session):
         application's main loop.
         """
         while self.logged_in:
+            #print "*** In session.py:process / loop logged_in"
             fd = self.conn.socket.fileno()
             r = select.select([fd], [], [], 0)
             if len(r[0]) > 0:
+                #print "* Received data from server"
                 buf = self.conn.receive_data_line()
                 self.__process_command_buf(buf)
             elif len(self.send_queue) > 0:
+                #print "* Sending data to server"
                 cmd = self.send_queue.pop(0)
                 cmd.send(self.conn)
             else:
@@ -351,6 +369,7 @@ class Session(_Session):
 
     def __process_command_buf(self, buf):
         cmd = buf[:3]
+        #print "** In session.py:__process_command_buf, command is %s" % cmd
         if cmd == 'MSG':
             self.__process_msg(buf)
         elif cmd == 'QNG':
@@ -424,8 +443,9 @@ class Session(_Session):
         passport_id = cmdline[5]
         display_name = url_codec.decode(cmdline[6])
         try:
-            chat_ = chat.Chat(self, server, hash, passport_id,
-                display_name, session_id)
+            #print "*** session.py:__process_rng New chat from %s (%s) on server %s session %s" % (passport_id,display_name,server,session_id)
+            chat_ = chat.Chat(self, server, hash, passport_id, display_name,
+                              session_id)
         except Error, e:
             if e.code == 1:  # connection closed
                 return
@@ -484,10 +504,10 @@ class Session(_Session):
     def __process_lst(self, command):
         from protocol import list_flags
 
-        passport_id  = command.args[0]
+        passport_id = command.args[0]
         display_name = url_codec.decode(command.args[1])
-        list_        = int(command.args[2])
-        group_id     = []
+        list_ = int(command.args[2])
+        group_id = []
 
         if list_ & list_flags[Lists.FORWARD]:
             group_id = [int(i) for i in split(command.args[3], ',')]
@@ -496,7 +516,7 @@ class Session(_Session):
         if len(group_id):
             groups = [self.friend_list.groups[g_id] for g_id in group_id]
 
-        friend = Friend(passport_id, display_name, groups = groups)
+        friend = Friend(passport_id, display_name, groups=groups)
         for f in list_flags.keys():
             if list_ & list_flags[f]:
                 self.friend_list.lists[f][passport_id] = friend
@@ -517,7 +537,7 @@ class Session(_Session):
         cr = self.chat_requests[command.trn]
         invitee = cr.invitee
         chat_ = chat.Chat(self, server, command.args[3], self.passport_id,
-            self.display_name, None, invitee)
+                          self.display_name, None, invitee)
         self.active_chats[chat_.session_id] = chat_
         self.callbacks.chat_started(chat_)
 
@@ -569,7 +589,7 @@ class Session(_Session):
             group = self.friend_list.groups[int(command.args[4])]
 
         self.friend_list.ver = ver
- 
+
         friend = self.friend_list.get_friend(passport_id, list_)
         if friend != None:
             friend.add_to_group(group)
@@ -584,7 +604,7 @@ class Session(_Session):
 
         if group != None:
             self.callbacks.friend_added(list_, passport_id, display_name,
-                group.get_id())
+                                        group.get_id())
         else:
             self.callbacks.friend_added(list_, passport_id, display_name)
 
@@ -599,7 +619,7 @@ class Session(_Session):
         self.friend_list.ver = ver
 
         friend = self.friend_list.get_friend(passport_id, list_)
-        if friend != None: # this shouldn't be None, unless friend_list stale
+        if friend != None:  # this shouldn't be None, unless friend_list stale
             if group != None:
                 friend.remove_from_group(group)
             if len(friend.get_groups()) == 0:
@@ -626,7 +646,7 @@ class Session(_Session):
         self.friend_list.updated = time()
         self.callbacks.friend_list_updated(self.friend_list)
 
-    def login(self, username, password, initial_state = States.ONLINE):
+    def login(self, username, password, initial_state=States.ONLINE):
         """Login to MSN server
 
         Keyword arguments:
@@ -666,11 +686,11 @@ class Session(_Session):
         """
         if not self.logged_in:
             return
-        chg = Command('CHG', self.transaction_id, (state,))
+        chg = Command('CHG', self.transaction_id, (state, ))
         self._async_command(chg)
         self.process()
 
-    def sync_friend_list(self, ver = -1):
+    def sync_friend_list(self, ver=-1):
         """Synchronise friend list by getting new copy from server
 
         The friend list is updated asynchronously.
@@ -687,11 +707,11 @@ class Session(_Session):
         self.friend_list.dirty = False
         if ver == -1:
             ver = self.friend_list.ver
-        syn = Command('SYN', self.transaction_id, (str(ver),))
+        syn = Command('SYN', self.transaction_id, (str(ver), ))
         self._async_command(syn)
         self.process()
 
-    def request_list(self, list_ = Lists.FORWARD):
+    def request_list(self, list_=Lists.FORWARD):
         """Request a list from the server
 
         Keyword arguments:
@@ -699,7 +719,7 @@ class Session(_Session):
         """
         if not self.logged_in:
             return
-        lst = Command('LST', self.transaction_id, (list_,))
+        lst = Command('LST', self.transaction_id, (list_, ))
         self._async_command(lst)
         self.process()
 
@@ -719,7 +739,7 @@ class Session(_Session):
         """
         if not self.logged_in:
             return
-        blp = Command('BLP', self.transaction_id, (privacy_mode,))
+        blp = Command('BLP', self.transaction_id, (privacy_mode, ))
         self._async_command(blp)
         self.process()
 
@@ -730,7 +750,7 @@ class Session(_Session):
         setting = 'N'
         if notify:
             setting = 'A'
-        gtc = Command('GTC', self.transaction_id, (setting,))
+        gtc = Command('GTC', self.transaction_id, (setting, ))
         self._async_command(gtc)
         self.process()
 
@@ -743,7 +763,7 @@ class Session(_Session):
         if not self.logged_in:
             return
         adg = Command('ADG', self.transaction_id,
-            (url_codec.encode(name), '0'))
+                      (url_codec.encode(name), '0'))
         self._async_command(adg)
         self.process()
 
@@ -755,7 +775,7 @@ class Session(_Session):
         """
         if not self.logged_in:
             return
-        rmg = Command('RMG', self.transaction_id, (str(id),))
+        rmg = Command('RMG', self.transaction_id, (str(id), ))
         self._async_command(rmg)
         self.process()
 
@@ -769,11 +789,11 @@ class Session(_Session):
         if not self.logged_in:
             return
         reg = Command('REG', self.transaction_id,
-            (str(id), url_codec.encode(name), '0'))
+                      (str(id), url_codec.encode(name), '0'))
         self._async_command(reg)
         self.process()
 
-    def add_friend(self, list_, passport_id, group_id = 0):
+    def add_friend(self, list_, passport_id, group_id=0):
         """Add a friend
 
         Keyword arguments:
@@ -784,14 +804,14 @@ class Session(_Session):
         add = None
         if list_ == Lists.FORWARD:
             add = Command('ADD', self.transaction_id,
-                (list_, passport_id, passport_id, str(group_id)))
+                          (list_, passport_id, passport_id, str(group_id)))
         else:
             add = Command('ADD', self.transaction_id,
-                (list_, passport_id, passport_id))
+                          (list_, passport_id, passport_id))
         self._async_command(add)
         self.process()
 
-    def remove_friend(self, list_, passport_id, group_id = 0):
+    def remove_friend(self, list_, passport_id, group_id=0):
         """Remove a friend
 
         Keyword arguments:
@@ -802,10 +822,9 @@ class Session(_Session):
         rem = None
         if list_ == Lists.FORWARD:
             rem = Command('REM', self.transaction_id,
-                (list_, passport_id, str(group_id)))
+                          (list_, passport_id, str(group_id)))
         else:
-            rem = Command('REM', self.transaction_id,
-                (list_, passport_id))
+            rem = Command('REM', self.transaction_id, (list_, passport_id))
         self._async_command(rem)
         self.process()
 
@@ -818,7 +837,7 @@ class Session(_Session):
         if not self.logged_in:
             return
         rea = Command('REA', self.transaction_id,
-            (self.passport_id, url_codec.encode(display_name)))
+                      (self.passport_id, url_codec.encode(display_name)))
         self._async_command(rea)
         self.process()
 
@@ -831,7 +850,7 @@ class Session(_Session):
         if not self.logged_in:
             return
         rea = Command('REA', self.transaction_id,
-            (passport_id, url_codec.encode('MJ++')))
+                      (passport_id, url_codec.encode('MJ++')))
         self._async_command(rea)
         self.process()
 
@@ -843,10 +862,10 @@ class Session(_Session):
         """
         if not self.logged_in:
             return
-        xfr = Command('XFR', self.transaction_id, ('SB',))
+        xfr = Command('XFR', self.transaction_id, ('SB', ))
         self._async_command(xfr)
         self.chat_requests[xfr.trn] = Session.__ChatRequest(invitee)
         self.process()
 
-# vim: set ts=4 sw=4 et tw=79 :
 
+# vim: set ts=4 sw=4 et tw=79 :

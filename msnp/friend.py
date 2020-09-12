@@ -19,9 +19,10 @@
 from protocol import States, Lists, PrivacyModes
 from time import time
 
+
 class Group:
     """A group in the friend list"""
-    def __init__(self, id, name, friends = None):
+    def __init__(self, id, name, friends=None):
         self.id = id
         self.name = name
         if friends == None:
@@ -59,10 +60,14 @@ class Group:
         """Return all online friends in this group"""
         return filter(lambda f: f.state != States.OFFLINE, self.friends)
 
+
 class Friend:
     """A friend in the friend list"""
-    def __init__(self, passport_id, display_name,
-        state = States.OFFLINE, groups = None):
+    def __init__(self,
+                 passport_id,
+                 display_name,
+                 state=States.OFFLINE,
+                 groups=None):
 
         self.passport_id = passport_id
         self.display_name = display_name
@@ -99,6 +104,7 @@ class Friend:
         """Remove friend from given group"""
         del group.friends[self.passport_id]
         del self.groups[group.id]
+
 
 class FriendList:
     """Friend list
@@ -137,14 +143,14 @@ class FriendList:
         """Return all groups in this list"""
         return self.groups.values()
 
-    def get_friend(self, passport_id, list_ = Lists.FORWARD):
+    def get_friend(self, passport_id, list_=Lists.FORWARD):
         """Return msnp.Friend instance for given passport ID and list type"""
         if self.lists[list_].has_key(passport_id):
             return self.lists[list_][passport_id]
         else:
             return None
 
-    def get_friends(self, list_ = Lists.FORWARD):
+    def get_friends(self, list_=Lists.FORWARD):
         """Return all friends from given list type"""
         return self.lists[list_].values()
 
@@ -155,7 +161,7 @@ class FriendList:
     def get_online_friends(self):
         """Return all online friends from forward list"""
         return filter(lambda f: f.state != States.OFFLINE,
-            self.lists[Lists.FORWARD])
+                      self.lists[Lists.FORWARD])
 
     def get_privacy_mode(self):
         """Return privacy mode (see msnp.PrivacyModes)"""
@@ -169,5 +175,5 @@ class FriendList:
         """Last updated timestamp, in seconds since the epoch"""
         return self.updated
 
-# vim: set ts=4 sw=4 et tw=79 :
 
+# vim: set ts=4 sw=4 et tw=79 :

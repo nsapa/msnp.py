@@ -19,6 +19,7 @@
 from string import split, join
 from binascii import hexlify, unhexlify
 
+
 class UrlCodec:  # url-encoding (rfc 1738)
     def encode(self, str):
         if str == None:
@@ -51,7 +52,8 @@ class UrlCodec:  # url-encoding (rfc 1738)
             else:
                 buf.append(c)
         return join(buf, '')
+
+
 url_codec = UrlCodec()
 
 # vim: set ts=4 sw=4 et tw=79 :
-

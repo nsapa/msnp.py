@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+
 class States:
     """Presence states"""
     ONLINE = 'NLN'
@@ -28,6 +29,7 @@ class States:
     ON_THE_PHONE = 'PHN'
     OUT_TO_LUNCH = 'LUN'
 
+
 class Lists:
     """Types of friend lists"""
     FORWARD = 'FL'
@@ -35,16 +37,18 @@ class Lists:
     ALLOW = 'AL'
     BLOCK = 'BL'
 
+
 class PrivacyModes:
     """Privacy modes"""
     ALLOW = 'AL'
     BLOCK = 'BL'
 
+
 list_flags = {
-    Lists.FORWARD : 1,
-    Lists.ALLOW   : 2,
-    Lists.BLOCK   : 4,
-    Lists.REVERSE : 8,
+    Lists.FORWARD: 1,
+    Lists.ALLOW: 2,
+    Lists.BLOCK: 4,
+    Lists.REVERSE: 8,
 }
 
 errors = {
@@ -65,22 +69,18 @@ errors = {
     '231': 'Tried to add a contact to a group that doesn\'t exist',
     '280': 'Switchboard failed',
     '281': 'Transfer to switchboard failed',
-
     '300': 'Required field missing',
     '302': 'Not logged in',
-
     '500': 'Internal server error',
     '501': 'Database server error',
     '510': 'File operation failed',
     '520': 'Memory allocation failed',
     '540': 'Wrong CHL value sent to server',
-
     '600': 'Server is busy',
     '601': 'Server is unavaliable',
     '602': 'Peer nameserver is down',
     '603': 'Database connection failed',
     '604': 'Server is going down',
-
     '707': 'Could not create connection',
     '710': 'CVR parameters either unknown or not allowed',
     '711': 'Write is blocking',
@@ -89,7 +89,6 @@ errors = {
     '714': 'Too many sessions',
     '715': 'Not expected',
     '717': 'Bad friend file',
-
     '911': 'Authentication failed',
     '913': 'Not allowed when offline',
     '920': 'Not accepting new users',
@@ -97,4 +96,3 @@ errors = {
 }
 
 # vim: set ts=4 sw=4 et tw=79 :
-

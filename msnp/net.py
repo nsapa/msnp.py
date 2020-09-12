@@ -21,6 +21,7 @@ import httplib
 
 from string import split, join
 
+
 class Connection:  # generic tcp connection wrapper
     def __init__(self, server):
         self.socket = None
@@ -30,6 +31,8 @@ class Connection:  # generic tcp connection wrapper
         if self.socket == None:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server = (self.server[0], int(self.server[1]))
+            print '** net.py:establish Connecting to %s:%i' % (
+                self.server[0], int(self.server[1]))
             s.connect(server)
             self.socket = s
         return self.socket
@@ -74,6 +77,7 @@ class Connection:  # generic tcp connection wrapper
         self.socket.close()
         self.socket = None
 
+
 class HttpProxyConnection(Connection):  # http tunnelling
     def __init__(self, server, proxy):
         Connection.__init__(self, server)
@@ -111,10 +115,16 @@ class HttpProxyConnection(Connection):  # http tunnelling
             self.socket = None
         return self.socket
 
+
 class HTTPSConnection(httplib.HTTPSConnection):
     # httplib.HTTPSConnection with HTTP proxy support
-    def __init__(self, host, port = None, key_file = None, cert_file = None,
-                 strict = None, http_proxy = None):
+    def __init__(self,
+                 host,
+                 port=None,
+                 key_file=None,
+                 cert_file=None,
+                 strict=None,
+                 http_proxy=None):
         httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
                                          strict)
         self.http_proxy = http_proxy
@@ -129,5 +139,5 @@ class HTTPSConnection(httplib.HTTPSConnection):
         else:
             httplib.HTTPSConnection.connect(self)
 
-# vim: set ts=4 sw=4 et tw=79 :
 
+# vim: set ts=4 sw=4 et tw=79 :

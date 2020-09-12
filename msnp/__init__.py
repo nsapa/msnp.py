@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
 """An implementation of the MSN Messenger Protocol
 
 msnp is a library, written in object-oriented Python, for accessing the MSN
@@ -59,11 +58,16 @@ import protocol
 
 __all__ = [
     'Error',
-    'Group', 'Friend', 'FriendList',
-    'Chat', 'ChatCallbacks',
-    'Session', 'SessionCallbacks',
-    'States', 'Lists', 'PrivacyModes',
+    'Group',
+    'Friend',
+    'FriendList',
+    'Chat',
+    'ChatCallbacks',
+    'Session',
+    'SessionCallbacks',
+    'States',
+    'Lists',
+    'PrivacyModes',
 ]
 
 # vim: set ts=4 sw=4 et tw=79 :
-

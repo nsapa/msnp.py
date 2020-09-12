@@ -26,8 +26,9 @@ from binascii import hexlify, unhexlify
 
 from codec import url_codec
 
+
 class Command:
-    def __init__(self, cmd = None, trn = None, args = None):
+    def __init__(self, cmd=None, trn=None, args=None):
         self.cmd = cmd
         self.trn = trn
         self.args = args
@@ -38,9 +39,8 @@ class Command:
         if s == None or len(s) <= 0: return
         self.cmd, pos = s[pos], pos + 1
         if len(s) <= pos: return
-        if self.cmd in ('NLN', 'FLN',
-            'GTC', 'BLP', 'PRP', 'LSG', 'LST',
-            'BPR'):
+        if self.cmd in ('NLN', 'FLN', 'GTC', 'BLP', 'PRP', 'LSG', 'LST',
+                        'BPR'):
             self.trn = 0
         else:
             self.trn, pos = int(s[pos]), pos + 1
@@ -57,6 +57,7 @@ class Command:
 
     def send(self, conn):
         conn.send_data_line(str(self))
+
 
 class Msg(Command):
     def __init__(self):
@@ -81,6 +82,7 @@ class Msg(Command):
         conn.send_data_line(str(self))
         conn.send_data_all(self.msg_buf)
 
+
 class Png(Command):
     def __init__(self):
         self.cmd = 'PNG'
@@ -93,9 +95,10 @@ class Png(Command):
     def __str__(self):
         return self.cmd
 
+
 class Qry(Command):  # response to server's CHL (challenge)
     def __init__(self, trn, hash):
-        Command.__init__(self, 'QRY', trn, ('msmsgs@msnmsgr.com 32',))
+        Command.__init__(self, 'QRY', trn, ('msmsgs@msnmsgr.com 32', ))
         self.hash = hash
 
     def parse(self, str):
@@ -112,5 +115,5 @@ class Qry(Command):  # response to server's CHL (challenge)
     def send(self, conn):
         conn.send_data_all(str(self))
 
-# vim: set ts=4 sw=4 et tw=79 :
 
+# vim: set ts=4 sw=4 et tw=79 :
