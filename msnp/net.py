@@ -95,7 +95,7 @@ class HttpProxyConnection(Connection):  # http tunnelling
             + ':' + str(self.server[1]) \
             + ' HTTP/1.0\r\n'
         self.send_data_all(connect_str)
-        self.send_data_all('User-Agent: msnp.py\r\n')
+        self.send_data_all('User-Agent: msnp.py/0.4.1\r\n')
         self.send_data_all('Host: ' + self.server[0] + '\r\n')
         self.send_data_all('\r\n')
 

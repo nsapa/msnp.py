@@ -213,7 +213,7 @@ class Session(_Session):
         _Session.__init__(self, callbacks)
 
         if dispatch_server == None:
-            self.dispatch_server = ('messenger.hotmail.com', 1863)
+            self.dispatch_server = ('m1.escargot.log1p.xyz', 1863)
 
         self.logged_in = 0
         self.passport_id = None
